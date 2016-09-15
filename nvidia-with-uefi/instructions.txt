@@ -1,0 +1,34 @@
+How to sign nvidia driver kernel modules to work with uefi:
+
+1) create a key to use for ALL signatures:
+
+sudo su
+openssl req -new -x509 -newkey rsa:2048 -keyout UEFI.priv -outform DER -out UEFI.der -nodes -days 36500 -subj "/CN=username/"
+
+2) import the key you have just created into the UEFI firmware on the machine
+
+mokutil --import UEFI.der
+
+Reboot the PC and you will be asked by MOK Manager to confirm the insertion of the key. Make sure to provide your user password
+
+You can check the key has beed inserted properly by using:
+
+dmesg | grep "EFI: Loaded cert"
+
+3) you can now install the nvidia driver from the ubuntu ppa repository
+
+sudo add-apt-repository ppa: graphics-drivers/ppa
+sudo apt-get update
+
+!!!!!! Say NO to prompt asking you to disable secure boot !!!!!!!!!
+
+sudo apt-get install nvidia-370 ???
+
+The driver has been installed but cannot be loaded until it is signed with a trusted key
+
+4) Proceed to sign all kernel .ko modules in nvidia updates dkms folder
+
+EXAMPLE:
+/usr/src/linux-headers-$(uname -r)/scripts/sign-file sha 256 /home/alex/UEFI.priv /home/alex/UEFI.der /lib/modules/4.4.0-31-generic/updates/dkms/nvidia370.ko
+
+(and nvidia_370_drm.ko nvidia_370_modeset.ko nvidia_370_uvm.ko)
